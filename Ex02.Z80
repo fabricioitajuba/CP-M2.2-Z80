@@ -12,4 +12,3 @@ BEGIN:  LD      DE, MSG ; Point DE to message string
 MSG:    DEFB    'Hello, CP/M World!', 0DH, 0AH, '$'
 
         END
-

@@ -1,0 +1,48 @@
+; bin2hex
+; para compilar: z80asm ex03
+; status: funcionou
+
+        ORG 100H    	; CP/M transient program area (TPA) entry point
+
+        ld a,0FAH
+	;ld a,12H
+	call printhex
+
+        RET             ; Return to CP/M console
+
+;--------------------------------------
+;Rotina: printhex
+;Mostra no display o byte no acumulador
+;A = Byte
+;--------------------------------------
+printhex:
+	push af
+	rrca
+	rrca
+	rrca
+	rrca
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_1
+	add a,07H
+outhex_1:
+       	call car_disp
+	pop af
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_2
+	add a,07H
+outhex_2:       
+	call car_disp
+	ret
+
+car_disp:	
+	ld e,a		; E=A
+       	LD C,2    	; BDOS function 2: Console output
+       	CALL 5       	; Call CP/M BDOS entry point
+	ret
+
+        END
+

@@ -1,0 +1,21 @@
+; Leitura de tecla e impressão na tecla
+; Assim que uma tecla é pressionada é mostrada
+; na tela.
+; Assemble using a Z80 assembler (Z80ASM)
+; para compilar: z80asm ex03
+; status: funcionou
+
+        ORG 100H    	; CP/M transient program area (TPA) entry point
+
+        LD C,1    	; BDOS function 1: Console input
+        CALL 5       	; Call CP/M BDOS entry point
+
+	ld e,a		; E=A
+
+        LD C,2    	; BDOS function 2: Console output
+        CALL 5       	; Call CP/M BDOS entry point
+
+        RET             ; Return to CP/M console
+
+        END
+

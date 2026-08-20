@@ -1,0 +1,24 @@
+; Comando CLS - Limpar a tela
+; para compilar: Z80ASM FCLS
+; status: funcionou
+
+TPA	equ	100h
+BDOS	equ	05h
+FUNC9	equ	09h	; Write string
+
+        org TPA    	; CP/M transient program area (TPA) entry point
+
+	ld de,clshome
+        ld c,FUNC9
+        call BDOS
+
+        ret             ; Return to CP/M console
+
+; ANSI escapes:
+;   clear screen      : ESC [ 2 J
+;   go to screen home : ESC [ H
+clshome:	
+	db      1bh, '[2J', 1bh, '[H$'
+
+        end
+

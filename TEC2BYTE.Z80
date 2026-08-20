@@ -1,0 +1,79 @@
+; TEC-BYTE
+; Mostra na tela, o byte da tecla pressionada
+; Para sair: Ctrl+q
+; Mostra também o byte de "Ctrl+tecla"
+; para compilar: Z80ASM TEC-BYTE
+; status: funcionou
+
+BDOS5	equ	05H
+FUNC1	equ	01H
+FUNC2	equ	02H
+
+CR	equ	0DH	;ASCII carriage return
+LF	equ	0AH	;ASCII line feed
+
+        ORG 100H    	; CP/M transient program area (TPA) entry point
+
+start:	ld c,FUNC1    	; BDOS function 1: Console input
+        call BDOS5	; Call CP/M BDOS entry point
+
+	cp 11H		;Ctrl+q
+	jp z,exit
+
+	push af
+
+	ld a,'-'
+	call car_disp
+
+	pop af
+
+	call printhex
+
+	ld a,'H'
+	call car_disp
+
+	ld a,LF
+	call car_disp
+	ld a,CR
+	call car_disp
+
+	jp start
+
+exit:	RET             ; Return to CP/M console
+
+;--------------------------------------
+;Rotina: printhex
+;Mostra no display o byte no acumulador
+;A = Byte
+;--------------------------------------
+printhex:
+	push af
+	rrca
+	rrca
+	rrca
+	rrca
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_1
+	add a,07H
+outhex_1:
+       	call car_disp
+	pop af
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_2
+	add a,07H
+outhex_2:       
+	call car_disp
+	ret
+
+car_disp:	
+	ld e,a		; E=A
+       	LD C,FUNC2    	; BDOS function 2: Console output
+       	CALL BDOS5      ; Call CP/M BDOS entry point
+	ret
+
+        END
+

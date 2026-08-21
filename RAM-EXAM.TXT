@@ -1,0 +1,17 @@
+Seta para cima: 48h
+Seta para baixo: 50h
+Seta para esquerda: 4Bh
+Seta para direita: 4Dh
+
+Page Up: E0h 49h
+Page Down: E0h 51h
+
+Ctrl+w: 17h
+Ctrl+x: 18h
+Ctrl+a: 01h
+
+h: 68h
+
+a:z80asm ram-exam/L
+
+/L -> Compila, gera o .lst e o .com

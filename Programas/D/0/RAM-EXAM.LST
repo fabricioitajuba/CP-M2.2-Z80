@@ -1,0 +1,391 @@
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   1
+RAM-EXAMZ80
+
+    1                   ; Examina a memC3ria RAM
+    2                   ; Autor: Eng. FabrC-cio Ribeiro
+    3                   ; para compilar: z80asm RAM-EXAM
+    4                   ; status: funcionou
+    5                   
+    6         0100      TPA	equ	100h	;CP/M transient program area (TPA) entry point
+    7         0005      BDOS	equ	05h	;Call CP/M BDOS entry point
+    8                   
+    9         0001      FUNC1	equ	01h	;BDOS function 1: Console input
+   10         0002      FUNC2	equ	02h	;BDOS function 2: Console output
+   11         0009      FUNC9	equ	09h	;Write string
+   12                   
+   13         000D      CR	equ	0DH	;ASCII carriage return
+   14         000A      LF	equ	0AH	;ASCII line feed
+   15                   
+   16                   
+   17         0100              ORG TPA
+   18                   
+   19 0100  21 0000     	ld hl,0000h
+   20 0103  CD 0000#    prox:	call clear_screen
+   21                   	
+   22 0106  11 0000#    	ld de,msg_1
+   23 0109  CD 0000#    	call linha_disp
+   24 010C  3E 0A       	ld a,LF
+   25 010E  CD 0000#    	call car_disp
+   26                   	
+   27 0111  0E 10       	ld c,16		;16 linhas
+   28 0113  06 10       loop1:	ld b,16		;16 colunas
+   29 0115  7C          	ld a,h
+   30 0116  CD 0000#    	call printhex
+   31 0119  7D          	ld a,l
+   32 011A  CD 0000#    	call printhex
+   33                   
+   34 011D  3E 20       	ld a,20h	;' ' Imprime espaC'o
+   35 011F  CD 0000#    	call car_disp
+   36                   
+   37 0122  3E 2D       	ld a,'-'	;'-' Imprime espaC'o
+   38 0124  CD 0000#    	call car_disp
+   39                   
+   40 0127  3E 20       loop:	ld a,20h	;' ' Imprime espaC'o
+   41 0129  CD 0000#    	call car_disp
+   42 012C  7E          	ld a,(hl)
+   43 012D  CD 0000#    	call printhex
+   44 0130  23          	inc hl
+   45 0131  10 F4       	djnz loop
+   46 0133  CD 0000#    	call pula_linha
+   47 0136  0D          	dec c	
+   48 0137  C2 0113     	jp nz,loop1
+   49                   
+   50 013A  CD 0000#    tec:	call pula_linha
+   51                   
+   52 013D  11 0000#    	ld de,msg_hlp1
+   53 0140  CD 0000#    	call linha_disp	
+   54                   	
+   55 0143  CD 0000#    teclas:	call pula_linha
+   56                   	
+   57 0146  3E 3F       	ld a,'?'
+   58 0148  CD 0000#    	call car_disp
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   2
+RAM-EXAMZ80
+
+   59                   
+   60 014B  CD 0000#    	call le_tec	;lC* uma tecla
+   61                   
+   62 014E  FE 11       	cp 11H		;Ctrl+q
+   63 0150  CA 0000#    	jp z,exit
+   64 0153  FE 17       	cp 17h		;Ctrl+w
+   65 0155  CA 0103     	jp z,prox
+   66 0158  FE 18       	cp 18h		;Ctrl+x
+   67 015A  CA 0000#    	jp z,page_down	
+   68 015D  FE 01       	cp 01h		;Ctrl+a
+   69 015F  CA 0000#    	jp z,address
+   70 0162  FE 08       	cp 08h		;Ctrl+h
+   71 0164  CA 0000#    	jp z,help	
+   72 0167  C3 013A     	jp tec
+   73                   
+   74 016A  C3 013A     	jp tec
+   75                   
+   76 016D              page_down:
+   77 016D  2B          	dec hl
+   78 016E  01 01FF     	ld bc,01ffh
+   79 0171  37          	SCF
+   80 0172  3F          	CCF
+   81 0173  ED 42       	sbc hl, bc
+   82 0175  C3 0103     	jp prox
+   83                   
+   84                   ;----------------------------------
+   85                   ;Altera conteC:do do endereC'o
+   86                   ;----------------------------------
+   87 0178              address:
+   88 0178  3E 0D       	ld a,CR
+   89 017A  CD 0000#    	call car_disp
+   90                   	
+   91 017D  11 0000#    	ld de,msg_4
+   92 0180  CD 0000#    	call linha_disp
+   93                   
+   94 0183  3E 0D       	ld a,CR
+   95 0185  CD 0000#    	call car_disp
+   96                   	
+   97 0188  11 0000#    	ld de,msg_2
+   98 018B  CD 0000#    	call linha_disp
+   99                   
+  100 018E  CD 0000#    	call le_tec	;lC* uma tecla
+  101 0191  FE 11       	cp 11H		;Ctrl+q
+  102 0193  CA 0000#    	jp z,ret_adress
+  103 0196  CD 0000#    	call asciitobin
+  104 0199  32 0000#    	ld (end1),a
+  105                   	
+  106 019C  CD 0000#    	call le_tec	;lC* uma tecla
+  107 019F  FE 11       	cp 11H		;Ctrl+q
+  108 01A1  CA 0000#    	jp z,ret_adress	
+  109 01A4  CD 0000#    	call asciitobin
+  110 01A7  32 0000#    	ld (end2),a
+  111                   
+  112 01AA  CD 0000#    	call le_tec	;lC* uma tecla
+  113 01AD  FE 11       	cp 11H		;Ctrl+q
+  114 01AF  CA 0000#    	jp z,ret_adress	
+  115 01B2  CD 0000#    	call asciitobin
+  116 01B5  32 0000#    	ld (end3),a
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   3
+RAM-EXAMZ80
+
+  117                   	
+  118 01B8  CD 0000#    	call le_tec	;lC* uma tecla
+  119 01BB  FE 11       	cp 11H		;Ctrl+q
+  120 01BD  CA 0000#    	jp z,ret_adress	
+  121 01C0  CD 0000#    	call asciitobin
+  122 01C3  32 0000#    	ld (end4),a
+  123                   
+  124 01C6  3E 68       	ld a,'h'
+  125 01C8  CD 0000#    	call car_disp
+  126                   
+  127 01CB  CD 0000#    	call pula_linha
+  128                   
+  129 01CE  11 0000#    	ld de,msg_3
+  130 01D1  CD 0000#    	call linha_disp
+  131                   
+  132 01D4  CD 0000#    	call le_tec	;lC* uma tecla
+  133 01D7  FE 11       	cp 11H		;Ctrl+q
+  134 01D9  CA 0000#    	jp z,ret_adress	
+  135 01DC  CD 0000#    	call asciitobin
+  136 01DF  32 0000#    	ld (dado1),a
+  137                   	
+  138 01E2  CD 0000#    	call le_tec	;lC* uma tecla
+  139 01E5  FE 11       	cp 11H		;Ctrl+q
+  140 01E7  CA 0000#    	jp z,ret_adress	
+  141 01EA  CD 0000#    	call asciitobin
+  142 01ED  32 0000#    	ld (dado2),a
+  143                   
+  144 01F0  3E 68       	ld a,'h'
+  145 01F2  CD 0000#    	call car_disp
+  146                   
+  147 01F5  E5          	push hl
+  148                   
+  149                   	;Altera o dado no endereC'o
+  150 01F6  3A 0000#    	ld a,(end1)
+  151 01F9  CB 27       	sla a
+  152 01FB  CB 27       	sla a
+  153 01FD  CB 27       	sla a
+  154 01FF  CB 27       	sla a
+  155 0201  67          	ld h,a
+  156 0202  3A 0000#    	ld a,(end2)
+  157 0205  84          	add a,h
+  158 0206  67          	ld h,a
+  159                   
+  160 0207  3A 0000#    	ld a,(end3)
+  161 020A  CB 27       	sla a
+  162 020C  CB 27       	sla a
+  163 020E  CB 27       	sla a
+  164 0210  CB 27       	sla a
+  165 0212  6F          	ld l,a
+  166 0213  3A 0000#    	ld a,(end4)
+  167 0216  85          	add a,l
+  168 0217  6F          	ld l,a
+  169                   
+  170 0218  3A 0000#    	ld a,(dado1)
+  171 021B  CB 27       	sla a
+  172 021D  CB 27       	sla a
+  173 021F  CB 27       	sla a
+  174 0221  CB 27       	sla a
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   4
+RAM-EXAMZ80
+
+  175 0223  4F          	ld c,a
+  176 0224  3A 0000#    	ld a,(dado2)
+  177 0227  81          	add a,c
+  178                   
+  179 0228  77          	ld (hl),a
+  180                   
+  181 0229  E1          	pop hl
+  182                   
+  183 022A              ret_adress:
+  184 022A  2B          	dec hl		;Para
+  185 022B  01 00FF     	ld bc,00ffh	;voltar
+  186 022E  37          	SCF		;na
+  187 022F  3F          	CCF		;mesma
+  188 0230  ED 42       	sbc hl, bc	;tela anterior
+  189                   
+  190 0232  C3 0103     	jp prox
+  191                   
+  192 0235  C9          exit:	ret             ; Return to CP/M console
+  193                   
+  194                   ;--------------------------------------
+  195                   ;Rotina para a prC3xima linha 
+  196                   ;--------------------------------------
+  197 0236              pula_linha:
+  198 0236  3E 0D       	ld a,CR
+  199 0238  CD 0000#    	call car_disp
+  200 023B  3E 0A       	ld a,LF
+  201 023D  CD 0000#    	call car_disp
+  202 0240  C9          	ret
+  203                   
+  204                   ;--------------------------------------
+  205                   ;Help do programa
+  206                   ;--------------------------------------
+  207 0241              help:	
+  208 0241  11 0000#    	ld de,msg_hlp2
+  209 0244  CD 0000#    	call linha_disp
+  210 0247  11 0000#    	ld de,msg_hlp3
+  211 024A  CD 0000#    	call linha_disp
+  212 024D  11 0000#    	ld de,msg_hlp4
+  213 0250  CD 0000#    	call linha_disp
+  214 0253  11 0000#    	ld de,msg_hlp5
+  215 0256  CD 0000#    	call linha_disp	
+  216 0259  C3 0143     	jp teclas
+  217                   
+  218                   ;--------------------------------------
+  219                   ;Rotina: le_tec
+  220                   ;LC* uma tecla do teclado e retorna no
+  221                   ;acumulador o byte da tecla pressionada
+  222                   ;--------------------------------------
+  223 025C  C5          le_tec:	push bc
+  224 025D  E5          	push hl
+  225 025E  0E 01       	ld c,FUNC1	;LC* uma
+  226 0260  CD 0005             call BDOS	;tecla
+  227 0263  E1          	pop hl
+  228 0264  C1          	pop bc
+  229 0265  C9          	ret
+  230                   
+  231                   ;--------------------------------------
+  232                   ;Rotina: asciitobin
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   5
+RAM-EXAMZ80
+
+  233                   ;Retorna no acumulador o binC!rio do cC3digo
+  234                   ;ASCII
+  235                   ;Entrada: A = valor em ASCII
+  236                   ;SaC-da: A = valor em binC!rio
+  237                   ;--------------------------------------
+  238 0266              asciitobin:
+  239 0266  FE 3A       	cp 3ah
+  240 0268  F2 0000#    	jp p,conver1
+  241 026B  D6 30       	sub a,30h
+  242 026D  C9          	ret
+  243 026E              conver1:
+  244 026E  CB AF       	res 5,a 
+  245 0270  D6 37       	sub 37h
+  246 0272  C9          	ret
+  247                   
+  248                   ;--------------------------------------
+  249                   ;Rotina: printhex
+  250                   ;Mostra na tela o byte no acumulador
+  251                   ;A = Byte
+  252                   ;--------------------------------------
+  253 0273              printhex:
+  254 0273  F5          	push af
+  255 0274  0F          	rrca
+  256 0275  0F          	rrca
+  257 0276  0F          	rrca
+  258 0277  0F          	rrca
+  259 0278  E6 0F       	and 0fh
+  260 027A  C6 30       	add a,30h
+  261 027C  FE 3A       	cp 3ah
+  262 027E  FA 0000#    	jp m,outhex_1
+  263 0281  C6 07       	add a,07h
+  264 0283              outhex_1:
+  265 0283  CD 0000#           	call car_disp
+  266 0286  F1          	pop af
+  267 0287  E6 0F       	and 0fh
+  268 0289  C6 30       	add a,30h
+  269 028B  FE 3A       	cp 3ah
+  270 028D  FA 0000#    	jp m,outhex_2
+  271 0290  C6 07       	add a,07h
+  272 0292              outhex_2:       
+  273 0292  CD 0000#    	call car_disp
+  274 0295  C9          	ret
+  275                   
+  276                   ;--------------------------------------
+  277                   ;Rotina: car_disp
+  278                   ;Mostra na tela o byte no acumulador
+  279                   ;A = Byte em ASCII
+  280                   ;--------------------------------------
+  281 0296              car_disp:
+  282 0296  C5          	push bc	
+  283 0297  E5          	push hl
+  284 0298  5F          	ld e,a
+  285 0299  06 00       	ld b,00h
+  286 029B  0E 02              	ld c,FUNC2
+  287 029D  CD 0005            	call BDOS
+  288 02A0  E1          	pop hl
+  289 02A1  C1          	pop bc
+  290 02A2  C9          	ret
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   6
+RAM-EXAMZ80
+
+  291                   
+  292                   ;--------------------------------------
+  293                   ;Rotina: clear_screen
+  294                   ;Limpa a tela
+  295                   ;--------------------------------------
+  296 02A3              clear_screen:
+  297 02A3  D5          	push de
+  298 02A4  E5          	push hl
+  299 02A5  11 0000#    	ld de,cls
+  300 02A8  CD 0000#            call linha_disp
+  301 02AB  E1          	pop hl
+  302 02AC  D1          	pop de
+  303 02AD  C9          	ret
+  304                   
+  305                   ;--------------------------------------
+  306                   ;Rotina: linha_disp
+  307                   ;DE = EndereC'o base da string
+  308                   ;--------------------------------------
+  309 02AE              linha_disp:
+  310 02AE  C5          	push bc
+  311 02AF  D5          	push de
+  312 02B0  E5          	push hl
+  313 02B1  0E 09               ld c,FUNC9
+  314 02B3  CD 0005             call BDOS
+  315 02B6  E1          	pop hl
+  316 02B7  D1          	pop de
+  317 02B8  C1          	pop bc
+  318 02B9  C9          	ret
+  319                   
+  320                   ;--------------------------------------
+  321                   ;Crea de mensagem
+  322                   ;--------------------------------------
+  323 02BA    0001      end1:	ds	1
+  324 02BB    0001      end2:	ds	1
+  325 02BC    0001      end3:	ds	1
+  326 02BD    0001      end4:	ds	1
+  327 02BE    0001      dado1:	ds	1
+  328 02BF    0001      dado2:	ds	1
+  329                   
+  330 02C0  1B 5B 32 4A cls:	db      1bh, '[2J', 1bh, '[H$'
+  331                   
+  332 02C8  23 23 20 45 msg_1:	defb	'## Examina RAM v1.0', CR, LF, '$'
+  333 02DE  41 64 64 72 msg_2:	defb	'Address: ', '$'
+  334 02E8  44 61 64 6F msg_3:	defb	'Dado: ', '$'
+  335 02EF  43 74 72 6C msg_4:	defb	'Ctrl+q para sair: ', CR, LF, '$'
+  336 0304              msg_hlp1:
+  337 0304  43 74 72 6C 	defb	'Ctrl+h para help: ', CR, LF, '$'
+  338 0319              msg_hlp2:	
+  339 0319  43 74 72 6C 	defb	'Ctrl+q para sair: ', CR, LF, '$'
+  340 032E              msg_hlp3:	
+  341 032E  43 74 72 6C 	defb	'Ctrl+a altera dado: ', CR, LF, '$'
+  342 0345              msg_hlp4:	
+  343 0345  43 74 72 6C 	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+RAM-EXAM.Z80 - ), Bin-Op, or End of Exp Expected Line 00343
+	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+RAM-EXAM.Z80 - Symbol Expected Line 00343
+	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+RAM-EXAM.Z80 - ID, (, or Unary Op Expected Line 00343
+Z80ASM SuperFast Relocating Macro Assembler     	    Z80ASM 1.32 Page   7
+RAM-EXAMZ80
+
+	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+RAM-EXAM.Z80 - ), Bin-Op, or End of Exp Expected Line 00343
+	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+RAM-EXAM.Z80 - String Syntax Line 00343
+	defb	'Ctrl+w EndereC'os posteriores: ', CR, LF, '$' 
+  344 0360              msg_hlp5:	
+  345 0360  43 74 72 6C 	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+RAM-EXAM.Z80 - ), Bin-Op, or End of Exp Expected Line 00345
+	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+RAM-EXAM.Z80 - Symbol Expected Line 00345
+	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+RAM-EXAM.Z80 - ID, (, or Unary Op Expected Line 00345
+	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+RAM-EXAM.Z80 - ), Bin-Op, or End of Exp Expected Line 00345
+	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+RAM-EXAM.Z80 - String Syntax Line 00345
+	defb	'Ctrl+w EndereC'os anteriores: ', CR, LF, '$'
+  346                   
+  347                           end
+ 10 Error(s) Detected.
+ 635 Absolute Bytes. 46 Symbols Detected.
+ndereC'os posteriores: ', C

@@ -1,0 +1,71 @@
+; Examina a memória e imprime os 16 primeiros bytes
+; Autor: Eng. Fabrício Ribeiro
+; para compilar: z80asm ex05
+; status: funcionou
+
+        ORG 100H    	; CP/M transient program area (TPA) entry point
+
+	ld b,16
+
+	ld hl,0000H
+	ld a,h
+	call printhex
+	ld a,l
+	call printhex
+loop:	ld a,20H	;' ' Imprime espaço
+	call car_disp
+	ld a,(hl)
+	call printhex
+	inc hl
+	djnz loop
+
+        ret             ; Return to CP/M console
+
+;--------------------------------------
+;Rotina: printhex
+;Mostra na tela o byte no acumulador
+;A = Byte
+;--------------------------------------
+printhex:
+	push bc
+	push af
+	rrca
+	rrca
+	rrca
+	rrca
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_1
+	add a,07H
+outhex_1:
+       	call car_disp
+	pop af
+	and 0FH
+	add a,30H
+	cp 3AH
+	jp m,outhex_2
+	add a,07H
+outhex_2:       
+	call car_disp
+	pop bc
+	ret
+
+;--------------------------------------
+;Rotina: car_disp
+;Mostra na tela o byte no acumulador
+;A = Byte em ASCII
+;--------------------------------------
+car_disp:
+	push bc	
+	push hl
+	ld e,a		; E=A
+	ld b,0
+       	ld c,2    	; BDOS function 2: Console output
+       	call 5       	; Call CP/M BDOS entry point
+	pop hl
+	pop bc
+	ret
+
+        END
+

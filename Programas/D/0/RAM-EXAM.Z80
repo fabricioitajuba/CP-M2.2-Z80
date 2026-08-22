@@ -1,0 +1,343 @@
+; Examina a memória RAM
+; Autor: Eng. Fabrício Ribeiro
+; para compilar: z80asm RAM-EXAM
+; status: funcionou
+
+TPA	equ	100h	;CP/M transient program area (TPA) entry point
+BDOS	equ	05h	;Call CP/M BDOS entry point
+
+FUNC1	equ	01h	;BDOS function 1: Console input
+FUNC2	equ	02h	;BDOS function 2: Console output
+FUNC9	equ	09h	;Write string
+
+CR	equ	0DH	;ASCII carriage return
+LF	equ	0AH	;ASCII line feed
+
+
+        ORG TPA
+
+	ld hl,0000h
+prox:	call clear_screen
+	
+	ld de,msg_1
+	call linha_disp
+	ld a,LF
+	call car_disp
+	
+	ld c,16		;16 linhas
+loop1:	ld b,16		;16 colunas
+	ld a,h
+	call printhex
+	ld a,l
+	call printhex
+
+	ld a,20h	;' ' Imprime espaço
+	call car_disp
+
+	ld a,'-'	;'-' Imprime espaço
+	call car_disp
+
+loop:	ld a,20h	;' ' Imprime espaço
+	call car_disp
+	ld a,(hl)
+	call printhex
+	inc hl
+	djnz loop
+	call pula_linha
+	dec c	
+	jp nz,loop1
+
+tec:	call pula_linha
+
+	ld de,hlp1
+	call linha_disp	
+	
+teclas:	call pula_linha
+	
+	ld a,'?'
+	call car_disp
+
+	call le_tec	;lê uma tecla
+
+	cp 11H		;Ctrl+q
+	jp z,exit
+	cp 17h		;Ctrl+w
+	jp z,prox
+	cp 18h		;Ctrl+x
+	jp z,page_down	
+	cp 01h		;Ctrl+a
+	jp z,address
+	cp 08h		;Ctrl+h
+	jp z,help	
+	jp tec
+
+	jp tec
+
+page_down:
+	dec hl
+	ld bc,01ffh
+	SCF
+	CCF
+	sbc hl, bc
+	jp prox
+
+;----------------------------------
+;Altera conteúdo do endereço
+;----------------------------------
+address:
+	ld a,CR
+	call car_disp
+	
+	ld de,msg_4
+	call linha_disp
+
+	ld a,CR
+	call car_disp
+	
+	ld de,msg_2
+	call linha_disp
+
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress
+	call asciitobin
+	ld (end1),a
+	
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
+	call asciitobin
+	ld (end2),a
+
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
+	call asciitobin
+	ld (end3),a
+	
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
+	call asciitobin
+	ld (end4),a
+
+	ld a,'h'
+	call car_disp
+
+	call pula_linha
+
+	ld de,msg_3
+	call linha_disp
+
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
+	call asciitobin
+	ld (dado1),a
+	
+	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
+	call asciitobin
+	ld (dado2),a
+
+	ld a,'h'
+	call car_disp
+
+	push hl
+
+	;Altera o dado no endereço
+	ld a,(end1)
+	sla a
+	sla a
+	sla a
+	sla a
+	ld h,a
+	ld a,(end2)
+	add a,h
+	ld h,a
+
+	ld a,(end3)
+	sla a
+	sla a
+	sla a
+	sla a
+	ld l,a
+	ld a,(end4)
+	add a,l
+	ld l,a
+
+	ld a,(dado1)
+	sla a
+	sla a
+	sla a
+	sla a
+	ld c,a
+	ld a,(dado2)
+	add a,c
+
+	ld (hl),a
+
+	pop hl
+
+ret_adress:
+	dec hl		;Para
+	ld bc,00ffh	;voltar
+	SCF		;na
+	CCF		;mesma
+	sbc hl, bc	;tela anterior
+
+	jp prox
+
+exit:	ret             ; Return to CP/M console
+
+;--------------------------------------
+;Rotina para a próxima linha 
+;--------------------------------------
+pula_linha:
+	ld a,CR
+	call car_disp
+	ld a,LF
+	call car_disp
+	ret
+
+;--------------------------------------
+;Help do programa
+;--------------------------------------
+help:	
+	ld de,hlp2
+	call linha_disp
+	ld de,hlp3
+	call linha_disp
+	ld de,hlp4
+	call linha_disp
+	ld de,hlp5
+	call linha_disp	
+	jp teclas
+
+;--------------------------------------
+;Rotina: le_tec
+;Lê uma tecla do teclado e retorna no
+;acumulador o byte da tecla pressionada
+;--------------------------------------
+le_tec:	push bc
+	push hl
+	ld c,FUNC1	;Lê uma
+        call BDOS	;tecla
+	pop hl
+	pop bc
+	ret
+
+;--------------------------------------
+;Rotina: asciitobin
+;Retorna no acumulador o binário do código
+;ASCII
+;Entrada: A = valor em ASCII
+;Saída: A = valor em binário
+;--------------------------------------
+asciitobin:
+	cp 3ah
+	jp p,conver1
+	sub a,30h
+	ret
+conver1:
+	res 5,a 
+	sub 37h
+	ret
+
+;--------------------------------------
+;Rotina: printhex
+;Mostra na tela o byte no acumulador
+;A = Byte
+;--------------------------------------
+printhex:
+	push af
+	rrca
+	rrca
+	rrca
+	rrca
+	and 0fh
+	add a,30h
+	cp 3ah
+	jp m,outhex_1
+	add a,07h
+outhex_1:
+       	call car_disp
+	pop af
+	and 0fh
+	add a,30h
+	cp 3ah
+	jp m,outhex_2
+	add a,07h
+outhex_2:       
+	call car_disp
+	ret
+
+;--------------------------------------
+;Rotina: car_disp
+;Mostra na tela o byte no acumulador
+;A = Byte em ASCII
+;--------------------------------------
+car_disp:
+	push bc	
+	push hl
+	ld e,a
+	ld b,00h
+       	ld c,FUNC2
+       	call BDOS
+	pop hl
+	pop bc
+	ret
+
+;--------------------------------------
+;Rotina: clear_screen
+;Limpa a tela
+;--------------------------------------
+clear_screen:
+	push de
+	push hl
+	ld de,cls
+        call linha_disp
+	pop hl
+	pop de
+	ret
+
+;--------------------------------------
+;Rotina: linha_disp
+;DE = Endereço base da string
+;--------------------------------------
+linha_disp:
+	push bc
+	push de
+	push hl
+        ld c,FUNC9
+        call BDOS
+	pop hl
+	pop de
+	pop bc
+	ret
+
+;--------------------------------------
+;Área de mensagem
+;--------------------------------------
+end1:	ds	1
+end2:	ds	1
+end3:	ds	1
+end4:	ds	1
+dado1:	ds	1
+dado2:	ds	1
+
+cls:	db      1bh, '[2J', 1bh, '[H$'
+
+msg_1:	defb	'## Examina RAM v1.0', CR, LF, '$'
+msg_2:	defb	'Address: ', '$'
+msg_3:	defb	'Dado: ', '$'
+msg_4:	defb	'Ctrl+q para sair: ', CR, LF, '$'
+hlp1:	defb	'Ctrl+h para help: ', CR, LF, '$'
+hlp2:	defb	'Ctrl+q para sair: ', CR, LF, '$'
+hlp3:	defb	'Ctrl+a altera dado: ', CR, LF, '$'
+hlp4:	defb	'Ctrl+w End. posteriores: ', CR, LF, '$' 
+hlp5:	defb	'Ctrl+w End. anteriores: ', CR, LF, '$'
+
+        end
+

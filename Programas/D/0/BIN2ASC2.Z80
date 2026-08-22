@@ -1,0 +1,91 @@
+; Conversão de:
+; - ASCII para BINÁRIO
+; - BINÁRIO para ASCII
+; Autor: Eng. Fabrício Ribeiro
+; para compilar: z80asm bin2asc2
+; status: funcionou
+
+TPA	equ	100h	;CP/M transient program area (TPA) entry point
+BDOS	equ	05h	;Call CP/M BDOS entry point
+
+FUNC1	equ	01h	;BDOS function 1: Console input
+FUNC2	equ	02h	;BDOS function 2: Console output
+FUNC9	equ	09h	;Write string
+
+CR	equ	0DH	;ASCII carriage return
+LF	equ	0AH	;ASCII line feed
+
+
+        ORG TPA
+
+	ld a,46h
+	call asciitobin	; ASCII para BINÁRIO
+	call printhex	; Imprime o valor
+
+	ret             ; Return to CP/M console
+
+
+
+;--------------------------------------
+;Rotina: asciitobin
+;Retorna no acumulador o binário do código
+;ASCII
+;Entrada: A = valor em ASCII
+;Saída: A = valor em binário
+;--------------------------------------
+asciitobin:
+	cp 3ah
+	jp p,conver1
+	sub a,30h
+	ret
+conver1:
+	res 5,a 
+	sub 37h
+	ret
+
+;--------------------------------------
+;Rotina: printhex
+;Mostra na tela o byte no acumulador
+;A = Byte
+;--------------------------------------
+printhex:
+	push af
+	rrca
+	rrca
+	rrca
+	rrca
+	and 0fh
+	add a,30h
+	cp 3ah
+	jp m,outhex_1
+	add a,07h
+outhex_1:
+       	call car_disp
+	pop af
+	and 0fh
+	add a,30h
+	cp 3ah
+	jp m,outhex_2
+	add a,07h
+outhex_2:       
+	call car_disp
+	ret
+
+;--------------------------------------
+;Rotina: car_disp
+;Mostra na tela o byte no acumulador
+;A = Byte em ASCII
+;--------------------------------------
+car_disp:
+	push bc	
+	push hl
+	ld e,a
+	ld b,00h
+       	ld c,FUNC2
+       	call BDOS
+	pop hl
+	pop bc
+	ret
+
+        end
+

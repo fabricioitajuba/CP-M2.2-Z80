@@ -192,7 +192,7 @@ le_tec:	push bc
 ;--------------------------------------
 asciitobin:
 	cp 3ah
-	jp m,conver1
+	jp p,conver1
 	sub a,30h
 	ret
 conver1:

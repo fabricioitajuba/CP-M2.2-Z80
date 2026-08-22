@@ -47,10 +47,13 @@ loop:	ld a,20h	;' ' Imprime espaço
 	dec c	
 	jp nz,loop1
 
-tec:	ld a,CR
-	call car_disp
-	ld a,LF
-	call car_disp
+tec:	call pula_linha
+
+	ld de,hlp1
+	call linha_disp	
+	
+teclas:	call pula_linha
+	
 	ld a,'?'
 	call car_disp
 
@@ -64,6 +67,8 @@ tec:	ld a,CR
 	jp z,page_down	
 	cp 01h		;Ctrl+a
 	jp z,address
+	cp 08h		;Ctrl+h
+	jp z,help	
 	jp tec
 
 	jp tec
@@ -82,20 +87,37 @@ page_down:
 address:
 	ld a,CR
 	call car_disp
+	
+	ld de,msg_4
+	call linha_disp
 
+	ld a,CR
+	call car_disp
+	
 	ld de,msg_2
 	call linha_disp
 
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress
 	call asciitobin
 	ld (end1),a
+	
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
 	call asciitobin
 	ld (end2),a
+
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
 	call asciitobin
 	ld (end3),a
+	
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
 	call asciitobin
 	ld (end4),a
 
@@ -108,9 +130,14 @@ address:
 	call linha_disp
 
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
 	call asciitobin
 	ld (dado1),a
+	
 	call le_tec	;lê uma tecla
+	cp 11H		;Ctrl+q
+	jp z,ret_adress	
 	call asciitobin
 	ld (dado2),a
 
@@ -153,6 +180,7 @@ address:
 
 	pop hl
 
+ret_adress:
 	dec hl		;Para
 	ld bc,00ffh	;voltar
 	SCF		;na
@@ -163,12 +191,29 @@ address:
 
 exit:	ret             ; Return to CP/M console
 
+;--------------------------------------
+;Rotina para a próxima linha 
+;--------------------------------------
 pula_linha:
 	ld a,CR
 	call car_disp
 	ld a,LF
 	call car_disp
 	ret
+
+;--------------------------------------
+;Help do programa
+;--------------------------------------
+help:	
+	ld de,hlp2
+	call linha_disp
+	ld de,hlp3
+	call linha_disp
+	ld de,hlp4
+	call linha_disp
+	ld de,hlp5
+	call linha_disp	
+	jp teclas
 
 ;--------------------------------------
 ;Rotina: le_tec
@@ -287,6 +332,12 @@ cls:	db      1bh, '[2J', 1bh, '[H$'
 msg_1:	defb	'## Examina RAM v1.0', CR, LF, '$'
 msg_2:	defb	'Address: ', '$'
 msg_3:	defb	'Dado: ', '$'
+msg_4:	defb	'Ctrl+q para sair: ', CR, LF, '$'
+hlp1:	defb	'Ctrl+h para help: ', CR, LF, '$'
+hlp2:	defb	'Ctrl+q para sair: ', CR, LF, '$'
+hlp3:	defb	'Ctrl+a altera dado: ', CR, LF, '$'
+hlp4:	defb	'Ctrl+w End. posteriores: ', CR, LF, '$' 
+hlp5:	defb	'Ctrl+w End. anteriores: ', CR, LF, '$'
 
         end
 

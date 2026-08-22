@@ -1,0 +1,18 @@
+https://github.com/serge-404/HI-TECH-C-V3.09
+https://github.com/agn453/HI-TECH-Z80-C/blob/master/doc/HTCZ80.TXT
+https://www.youtube.com/watch?v=c55_bTJMj0M&t=442s
+
+Exemplo:
+
+            main()
+            {
+                    printf("Hello, world\n");
+            }
+
+- para compilar:
+ C -V HELLO.C
+ ou
+ A:C -V HELLO.C
+
+- para executar:
+HELLO
